@@ -1,0 +1,11 @@
+{
+  "name": "DeepSeek Usage",
+  "content_in_root": false,
+  "filename": "deepseek_usage.zip",
+  "country": [
+    "CN"
+  ],
+  "homeassistant": "2023.1.0",
+  "render_readme": true,
+  "iot_class": "cloud_polling"
+}

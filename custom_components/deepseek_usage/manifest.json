@@ -1,0 +1,13 @@
+{
+  "domain": "deepseek_usage",
+  "name": "DeepSeek Usage",
+  "codeowners": [
+    "@user"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/SagisawaTsubasa/DeepSeek-HA-Usage",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "1.0.0"
+}

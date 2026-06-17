@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "DeepSeek Usage",
+        "description": "输入你的 DeepSeek API Key",
+        "data": {
+          "api_key": "API Key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "API Key 无效或无法连接"
+    },
+    "abort": {
+      "already_configured": "已经配置过了"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "选项",
+        "data": {
+          "scan_interval": "更新间隔（秒）"
+        }
+      }
+    }
+  }
+}
