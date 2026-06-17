@@ -34,15 +34,7 @@ Home Assistant 自定义集成，用于在仪表盘上实时显示 **DeepSeek AP
 
 ## 安装
 
-### 方式一：手动安装（推荐，最快）
-
-1. 下载 [最新 Release](https://github.com/SagisawaTsubasa/DeepSeek-HA-Usage/releases/latest) 并解压。
-2. 将 `custom_components/deepseek_usage/` 复制到 Home Assistant 的 `config/custom_components/` 目录下。
-3. 重启 Home Assistant。
-4. 进入 **设置 > 设备与服务 > 添加集成**，搜索 **DeepSeek Usage**。
-5. 输入你的 DeepSeek API Key，完成配置。
-
-### 方式二：通过 HACS 安装
+### 通过 HACS 安装
 
 1. 打开 HACS，点击右上角 **自定义仓库**。
 2. 仓库类型选 **Integration**，填入本仓库地址：`https://github.com/SagisawaTsubasa/DeepSeek-HA-Usage`。
@@ -88,6 +80,12 @@ title: DeepSeek API 余额
 
 **Q: 刷新间隔最低能设多少？**
 > 60 秒。不建议低于 300 秒，避免触发限流。
+
+---
+
+## 致谢
+
+本集成由 [Kimi](https://kimi.moonshot.cn) 协助开发。
 
 ---
 
