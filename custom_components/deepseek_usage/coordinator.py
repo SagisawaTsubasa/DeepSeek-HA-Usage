@@ -80,29 +80,22 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
 
     def _compute_window(self, start_ts: float, end_ts: float) -> float | None:
         """Compute consumption for [start_ts, end_ts]. Returns None if insufficient data."""
-        # 窗口内的历史记录
         in_window = [h for h in self.history if start_ts <= h["ts"] <= end_ts]
 
         if in_window:
-            # 窗口内有数据，用窗口内第一条作为起始，最后一条作为结束
             start_balance = in_window[0]["balance"]
             end_balance = in_window[-1]["balance"]
         else:
-            # 窗口内没有数据，尝试外推
-            # 起始：窗口前最后一条
             before_start = [h for h in self.history if h["ts"] < start_ts]
             if not before_start:
                 return None
             start_balance = before_start[-1]["balance"]
 
-            # 结束：窗口前最后一条（end_ts 之前）
             before_end = [h for h in self.history if h["ts"] < end_ts]
             if not before_end:
                 return None
             end_balance = before_end[-1]["balance"]
 
-            # 如果窗口前起始和结束是同一条，说明窗口期间没有记录
-            # 尝试用窗口后第一条作为结束
             if before_start[-1] == before_end[-1]:
                 after_end = [h for h in self.history if h["ts"] > end_ts]
                 if after_end:
@@ -110,7 +103,6 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
                 else:
                     return 0.0
 
-        # 窗口内的充值
         recharge = sum(
             r["amount"] for r in self.recharges if start_ts <= r["ts"] <= end_ts
         )
@@ -172,7 +164,6 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
                     weekday = now_dt.weekday()
                     week_start = today_start - weekday * 86400
 
-                    # 最近周期消耗（相邻两次刷新）
                     if len(self.history) >= 2:
                         prev_ts = self.history[-2]["ts"]
                         cycle_recharge = sum(

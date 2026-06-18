@@ -78,12 +78,13 @@ class DeepSeekOptionsFlow(OptionsFlow):
     """Handle options flow for DeepSeek Usage."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize options flow."""
-        try:
-            super().__init__()
-        except TypeError:
-            super().__init__(config_entry)
-        self.config_entry = config_entry
+        """Initialize options flow.
+
+        注意：不调用 super().__init__()，避免 HA 2023.x/2024.x/2025.x 
+        OptionsFlow 基类签名差异导致的兼容性问题。
+        HA 核心会在调用 async_step_init 前自行设置 hass/handler 等属性。
+        """
+        self._entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -92,7 +93,7 @@ class DeepSeekOptionsFlow(OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        options = self.config_entry.options or {}
+        options = self._entry.options or {}
         default_scan = options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         if not isinstance(default_scan, int):
             default_scan = DEFAULT_SCAN_INTERVAL
