@@ -4,6 +4,7 @@ from __future__ import annotations
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -19,18 +20,26 @@ async def async_setup_entry(
     """Set up the DeepSeek sensors."""
     coordinator: DeepSeekCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
+    device_info = DeviceInfo(
+        identifiers={(DOMAIN, config_entry.entry_id)},
+        name="DeepSeek Usage",
+        manufacturer="DeepSeek",
+        model="API Balance",
+        entry_type="service",
+    )
+
     sensors = [
-        DeepSeekBalanceSensor(coordinator, "total_balance", "总余额"),
-        DeepSeekBalanceSensor(coordinator, "granted_balance", "赠送余额"),
-        DeepSeekBalanceSensor(coordinator, "topped_up_balance", "充值余额"),
-        DeepSeekAvailabilitySensor(coordinator),
-        DeepSeekConsumedSensor(coordinator, "consumed", "最近消耗"),
-        DeepSeekConsumedSensor(coordinator, "consumed_30m", "30分钟消耗"),
-        DeepSeekConsumedSensor(coordinator, "consumed_3h", "3小时消耗"),
-        DeepSeekConsumedSensor(coordinator, "consumed_today", "今日消耗"),
-        DeepSeekConsumedSensor(coordinator, "consumed_yesterday", "昨日消耗"),
-        DeepSeekConsumedSensor(coordinator, "consumed_week", "本周消耗"),
-        DeepSeekRechargeSensor(coordinator),
+        DeepSeekBalanceSensor(coordinator, "total_balance", "总余额", device_info),
+        DeepSeekBalanceSensor(coordinator, "granted_balance", "赠送余额", device_info),
+        DeepSeekBalanceSensor(coordinator, "topped_up_balance", "充值余额", device_info),
+        DeepSeekAvailabilitySensor(coordinator, device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed", "最近消耗", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed_30m", "30分钟消耗", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed_3h", "3小时消耗", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed_today", "今日消耗", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed_yesterday", "昨日消耗", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed_week", "本周消耗", device_info),
+        DeepSeekRechargeSensor(coordinator, device_info),
     ]
 
     async_add_entities(sensors)
@@ -49,12 +58,14 @@ class DeepSeekBalanceSensor(CoordinatorEntity, SensorEntity):
         coordinator: DeepSeekCoordinator,
         key: str,
         name: str,
+        device_info: DeviceInfo,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._key = key
         self._attr_name = name
-        self._attr_unique_id = f"deepseek_{key}"
+        self._attr_unique_id = f"deepseek_{key}_{coordinator.entry.entry_id}"
+        self._attr_device_info = device_info
 
     @property
     def native_value(self):
@@ -74,11 +85,12 @@ class DeepSeekAvailabilitySensor(CoordinatorEntity, SensorEntity):
 
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator: DeepSeekCoordinator) -> None:
+    def __init__(self, coordinator: DeepSeekCoordinator, device_info: DeviceInfo) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._attr_name = "余额可用"
-        self._attr_unique_id = "deepseek_is_available"
+        self._attr_unique_id = f"deepseek_is_available_{coordinator.entry.entry_id}"
+        self._attr_device_info = device_info
 
     @property
     def native_value(self):
@@ -99,12 +111,14 @@ class DeepSeekConsumedSensor(CoordinatorEntity, SensorEntity):
         coordinator: DeepSeekCoordinator,
         key: str,
         name: str,
+        device_info: DeviceInfo,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._key = key
         self._attr_name = name
-        self._attr_unique_id = f"deepseek_{key}"
+        self._attr_unique_id = f"deepseek_{key}_{coordinator.entry.entry_id}"
+        self._attr_device_info = device_info
 
     @property
     def native_value(self):
@@ -135,11 +149,12 @@ class DeepSeekRechargeSensor(CoordinatorEntity, SensorEntity):
     _attr_native_unit_of_measurement = "CNY"
     _attr_device_class = SensorDeviceClass.MONETARY
 
-    def __init__(self, coordinator: DeepSeekCoordinator) -> None:
+    def __init__(self, coordinator: DeepSeekCoordinator, device_info: DeviceInfo) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._attr_name = "累计充值"
-        self._attr_unique_id = "deepseek_total_recharge"
+        self._attr_unique_id = f"deepseek_total_recharge_{coordinator.entry.entry_id}"
+        self._attr_device_info = device_info
 
     @property
     def native_value(self):

@@ -96,8 +96,6 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
         """Calculate consumption, accounting for recharges."""
         if start_balance is None:
             return None
-        # 实际消耗 = 起始余额 - 当前余额 + 窗口内充值
-        # 因为充值会让余额上升，需要加回来
         raw = start_balance - current + recharge_in_window
         return max(0.0, round(raw, 2))
 
@@ -193,7 +191,6 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
 
                     if len(self.history) >= 2:
                         prev = self.history[-2]["balance"]
-                        # 最近周期消耗也考虑充值（从上次刷新到现在）
                         cycle_recharge = self._window_recharge_total(self.history[-2]["ts"])
                         cycle_consumed = max(0, round(prev - current_total + cycle_recharge, 2))
                     else:
