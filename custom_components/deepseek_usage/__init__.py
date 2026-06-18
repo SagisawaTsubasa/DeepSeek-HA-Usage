@@ -2,17 +2,24 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
+from .const import DOMAIN, SERVICE_RECORD_RECHARGE
 from .coordinator import DeepSeekCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.SENSOR]
+
+SERVICE_SCHEMA = vol.Schema({
+    vol.Required("amount"): cv.positive_float,
+})
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -26,6 +33,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
+    async def handle_record_recharge(call: ServiceCall) -> None:
+        """Handle the record_recharge service call."""
+        amount = call.data["amount"]
+        await coordinator.async_record_recharge(amount)
+
+    # 注册服务（每个 entry 只注册一次，用 domain 级别服务）
+    if not hass.services.has_service(DOMAIN, SERVICE_RECORD_RECHARGE):
+        hass.services.async_register(
+            DOMAIN, SERVICE_RECORD_RECHARGE, handle_record_recharge, schema=SERVICE_SCHEMA
+        )
+
     return True
 
 
@@ -33,7 +51,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        coordinator = hass.data[DOMAIN].pop(entry.entry_id)
+        # 如果这是最后一个实例，注销服务
+        if not hass.data[DOMAIN]:
+            hass.services.async_remove(DOMAIN, SERVICE_RECORD_RECHARGE)
     return unload_ok
 
 

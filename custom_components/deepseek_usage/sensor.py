@@ -24,6 +24,13 @@ async def async_setup_entry(
         DeepSeekBalanceSensor(coordinator, "granted_balance", "赠送余额"),
         DeepSeekBalanceSensor(coordinator, "topped_up_balance", "充值余额"),
         DeepSeekAvailabilitySensor(coordinator),
+        DeepSeekConsumedSensor(coordinator, "consumed", "最近消耗"),
+        DeepSeekConsumedSensor(coordinator, "consumed_30m", "30分钟消耗"),
+        DeepSeekConsumedSensor(coordinator, "consumed_3h", "3小时消耗"),
+        DeepSeekConsumedSensor(coordinator, "consumed_today", "今日消耗"),
+        DeepSeekConsumedSensor(coordinator, "consumed_yesterday", "昨日消耗"),
+        DeepSeekConsumedSensor(coordinator, "consumed_week", "本周消耗"),
+        DeepSeekRechargeSensor(coordinator),
     ]
 
     async_add_entities(sensors)
@@ -77,3 +84,71 @@ class DeepSeekAvailabilitySensor(CoordinatorEntity, SensorEntity):
     def native_value(self):
         """Return the state of the sensor."""
         return "on" if self.coordinator.data.get("is_available") else "off"
+
+
+class DeepSeekConsumedSensor(CoordinatorEntity, SensorEntity):
+    """Representation of consumed amount over a time window."""
+
+    _attr_has_entity_name = True
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "CNY"
+    _attr_device_class = SensorDeviceClass.MONETARY
+
+    def __init__(
+        self,
+        coordinator: DeepSeekCoordinator,
+        key: str,
+        name: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._key = key
+        self._attr_name = name
+        self._attr_unique_id = f"deepseek_{key}"
+
+    @property
+    def native_value(self):
+        """Return the consumed amount."""
+        val = self.coordinator.data.get(self._key)
+        if val is None:
+            return "unavailable"
+        return val
+
+    @property
+    def available(self) -> bool:
+        """Return if sensor has data."""
+        return self.coordinator.data.get(self._key) is not None
+
+    @property
+    def extra_state_attributes(self):
+        """Return extra attributes."""
+        return {
+            "currency": self.coordinator.data.get("currency"),
+        }
+
+
+class DeepSeekRechargeSensor(CoordinatorEntity, SensorEntity):
+    """Representation of total recorded recharge amount."""
+
+    _attr_has_entity_name = True
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_native_unit_of_measurement = "CNY"
+    _attr_device_class = SensorDeviceClass.MONETARY
+
+    def __init__(self, coordinator: DeepSeekCoordinator) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._attr_name = "累计充值"
+        self._attr_unique_id = "deepseek_total_recharge"
+
+    @property
+    def native_value(self):
+        """Return total recorded recharge amount."""
+        return self.coordinator.data.get("total_recharge", 0)
+
+    @property
+    def extra_state_attributes(self):
+        """Return extra attributes."""
+        return {
+            "currency": self.coordinator.data.get("currency"),
+        }
