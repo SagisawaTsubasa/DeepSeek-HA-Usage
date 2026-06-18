@@ -78,65 +78,43 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
                 return
         self.history.append({"ts": ts, "balance": balance})
 
-    def _find_window_start_balance(self, target_ts: float) -> float | None:
-        """Find the oldest balance entry within the window."""
-        valid = [h["balance"] for h in self.history if h["ts"] >= target_ts]
-        if not valid:
-            return None
-        return valid[0]
+    def _compute_window(self, start_ts: float, end_ts: float) -> float | None:
+        """Compute consumption for [start_ts, end_ts]. Returns None if insufficient data."""
+        # 窗口内的历史记录
+        in_window = [h for h in self.history if start_ts <= h["ts"] <= end_ts]
 
-    def _window_recharge_total(self, start_ts: float) -> float:
-        """Sum recharges within [start_ts, now]."""
-        now = time.time()
-        return sum(
-            r["amount"] for r in self.recharges if start_ts <= r["ts"] <= now
+        if in_window:
+            # 窗口内有数据，用窗口内第一条作为起始，最后一条作为结束
+            start_balance = in_window[0]["balance"]
+            end_balance = in_window[-1]["balance"]
+        else:
+            # 窗口内没有数据，尝试外推
+            # 起始：窗口前最后一条
+            before_start = [h for h in self.history if h["ts"] < start_ts]
+            if not before_start:
+                return None
+            start_balance = before_start[-1]["balance"]
+
+            # 结束：窗口前最后一条（end_ts 之前）
+            before_end = [h for h in self.history if h["ts"] < end_ts]
+            if not before_end:
+                return None
+            end_balance = before_end[-1]["balance"]
+
+            # 如果窗口前起始和结束是同一条，说明窗口期间没有记录
+            # 尝试用窗口后第一条作为结束
+            if before_start[-1] == before_end[-1]:
+                after_end = [h for h in self.history if h["ts"] > end_ts]
+                if after_end:
+                    end_balance = after_end[0]["balance"]
+                else:
+                    return 0.0
+
+        # 窗口内的充值
+        recharge = sum(
+            r["amount"] for r in self.recharges if start_ts <= r["ts"] <= end_ts
         )
-
-    def _calc_consumed(self, start_balance: float | None, current: float, recharge_in_window: float = 0.0) -> float | None:
-        """Calculate consumption, accounting for recharges."""
-        if start_balance is None:
-            return None
-        raw = start_balance - current + recharge_in_window
-        return max(0.0, round(raw, 2))
-
-    def _compute_windows(self, current_balance: float) -> dict[str, float | None]:
-        """Compute consumption for various time windows."""
-        now = time.time()
-        now_dt = datetime.fromtimestamp(now)
-
-        today_start = datetime(now_dt.year, now_dt.month, now_dt.day).timestamp()
-        yesterday_start = today_start - 86400
-        weekday = now_dt.weekday()
-        week_start = today_start - weekday * 86400
-
-        windows = {
-            "consumed_30m": self._calc_consumed(
-                self._find_window_start_balance(now - 1800),
-                current_balance,
-                self._window_recharge_total(now - 1800),
-            ),
-            "consumed_3h": self._calc_consumed(
-                self._find_window_start_balance(now - 10800),
-                current_balance,
-                self._window_recharge_total(now - 10800),
-            ),
-            "consumed_today": self._calc_consumed(
-                self._find_window_start_balance(today_start),
-                current_balance,
-                self._window_recharge_total(today_start),
-            ),
-            "consumed_yesterday": self._calc_consumed(
-                self._find_window_start_balance(yesterday_start),
-                current_balance,
-                self._window_recharge_total(yesterday_start),
-            ),
-            "consumed_week": self._calc_consumed(
-                self._find_window_start_balance(week_start),
-                current_balance,
-                self._window_recharge_total(week_start),
-            ),
-        }
-        return windows
+        return max(0.0, round(start_balance - end_balance + recharge, 2))
 
     async def async_record_recharge(self, amount: float) -> None:
         """Record a manual recharge."""
@@ -187,12 +165,20 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
                     except Exception as err:
                         _LOGGER.warning("Failed to save history: %s", err)
 
-                    windows = self._compute_windows(current_total)
+                    now = time.time()
+                    now_dt = datetime.fromtimestamp(now)
+                    today_start = datetime(now_dt.year, now_dt.month, now_dt.day).timestamp()
+                    yesterday_start = today_start - 86400
+                    weekday = now_dt.weekday()
+                    week_start = today_start - weekday * 86400
 
+                    # 最近周期消耗（相邻两次刷新）
                     if len(self.history) >= 2:
-                        prev = self.history[-2]["balance"]
-                        cycle_recharge = self._window_recharge_total(self.history[-2]["ts"])
-                        cycle_consumed = max(0, round(prev - current_total + cycle_recharge, 2))
+                        prev_ts = self.history[-2]["ts"]
+                        cycle_recharge = sum(
+                            r["amount"] for r in self.recharges if prev_ts <= r["ts"] <= now
+                        )
+                        cycle_consumed = max(0, round(self.history[-2]["balance"] - current_total + cycle_recharge, 2))
                     else:
                         cycle_consumed = 0.0
 
@@ -206,7 +192,11 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
                         "topped_up_balance": float(balance_info.get("topped_up_balance", 0)),
                         "consumed": cycle_consumed,
                         "total_recharge": round(total_recharge, 2),
-                        **windows,
+                        "consumed_30m": self._compute_window(now - 1800, now),
+                        "consumed_3h": self._compute_window(now - 10800, now),
+                        "consumed_today": self._compute_window(today_start, now),
+                        "consumed_yesterday": self._compute_window(yesterday_start, today_start),
+                        "consumed_week": self._compute_window(week_start, now),
                     }
 
         except aiohttp.ClientError as err:

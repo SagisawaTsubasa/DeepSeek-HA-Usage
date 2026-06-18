@@ -79,6 +79,10 @@ class DeepSeekOptionsFlow(OptionsFlow):
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize options flow."""
+        try:
+            super().__init__()
+        except TypeError:
+            super().__init__(config_entry)
         self.config_entry = config_entry
 
     async def async_step_init(
@@ -88,14 +92,17 @@ class DeepSeekOptionsFlow(OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
+        options = self.config_entry.options or {}
+        default_scan = options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        if not isinstance(default_scan, int):
+            default_scan = DEFAULT_SCAN_INTERVAL
+
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema({
                 vol.Optional(
                     CONF_SCAN_INTERVAL,
-                    default=self.config_entry.options.get(
-                        CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
-                    ),
+                    default=default_scan,
                 ): vol.All(vol.Coerce(int), vol.Range(min=60, max=86400)),
             }),
         )
