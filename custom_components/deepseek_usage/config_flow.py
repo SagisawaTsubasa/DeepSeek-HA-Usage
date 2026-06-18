@@ -80,9 +80,7 @@ class DeepSeekOptionsFlow(OptionsFlow):
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize options flow.
 
-        注意：不调用 super().__init__()，避免 HA 2023.x/2024.x/2025.x 
-        OptionsFlow 基类签名差异导致的兼容性问题。
-        HA 核心会在调用 async_step_init 前自行设置 hass/handler 等属性。
+        不调用 super().__init__()，避免 HA 版本兼容性问题。
         """
         self._entry = config_entry
 

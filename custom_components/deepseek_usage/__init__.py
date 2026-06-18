@@ -50,13 +50,19 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        coordinator = hass.data[DOMAIN].pop(entry.entry_id)
-        if not hass.data[DOMAIN]:
-            hass.services.async_remove(DOMAIN, SERVICE_RECORD_RECHARGE)
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+        if not hass.data.get(DOMAIN):
+            try:
+                hass.services.async_remove(DOMAIN, SERVICE_RECORD_RECHARGE)
+            except Exception:
+                pass
     return unload_ok
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload config entry."""
-    await async_unload_entry(hass, entry)
-    await async_setup_entry(hass, entry)
+    """Reload config entry.
+
+    使用 hass.config_entries.async_reload 让 HA 核心自行处理卸载和重新加载，
+    避免手动调用 async_unload_entry + async_setup_entry 导致的双重卸载问题。
+    """
+    await hass.config_entries.async_reload(entry.entry_id)
