@@ -9,6 +9,7 @@ from typing import Any
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -129,66 +130,66 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
         }
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    "https://api.deepseek.com/user/balance",
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=30),
-                ) as response:
-                    if response.status == 401:
-                        raise UpdateFailed("API Key 无效或已过期")
-                    if response.status != 200:
-                        text = await response.text()
-                        raise UpdateFailed(f"HTTP {response.status}: {text}")
+            session = async_get_clientsession(self.hass)
+            async with session.get(
+                "https://api.deepseek.com/user/balance",
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=30),
+            ) as response:
+                if response.status == 401:
+                    raise UpdateFailed("API Key 无效或已过期")
+                if response.status != 200:
+                    text = await response.text()
+                    raise UpdateFailed(f"HTTP {response.status}: {text}")
 
-                    data = await response.json()
+                data = await response.json()
 
-                    if not data.get("is_available"):
-                        _LOGGER.warning("DeepSeek 余额不可用")
+                if not data.get("is_available"):
+                    _LOGGER.warning("DeepSeek 余额不可用")
 
-                    balance_info = data.get("balance_infos", [{}])[0]
-                    current_total = float(balance_info.get("total_balance", 0))
-                    now_ts = time.time()
+                balance_info = data.get("balance_infos", [{}])[0]
+                current_total = float(balance_info.get("total_balance", 0))
+                now_ts = time.time()
 
-                    self._append_history(now_ts, current_total)
-                    self._cleanup_history()
-                    try:
-                        await self.store.async_save({"history": self.history, "recharges": self.recharges})
-                    except Exception as err:
-                        _LOGGER.warning("Failed to save history: %s", err)
+                self._append_history(now_ts, current_total)
+                self._cleanup_history()
+                try:
+                    await self.store.async_save({"history": self.history, "recharges": self.recharges})
+                except Exception as err:
+                    _LOGGER.warning("Failed to save history: %s", err)
 
-                    now = time.time()
-                    now_dt = datetime.fromtimestamp(now)
-                    today_start = datetime(now_dt.year, now_dt.month, now_dt.day).timestamp()
-                    yesterday_start = today_start - 86400
-                    weekday = now_dt.weekday()
-                    week_start = today_start - weekday * 86400
+                now = time.time()
+                now_dt = datetime.fromtimestamp(now)
+                today_start = datetime(now_dt.year, now_dt.month, now_dt.day).timestamp()
+                yesterday_start = today_start - 86400
+                weekday = now_dt.weekday()
+                week_start = today_start - weekday * 86400
 
-                    if len(self.history) >= 2:
-                        prev_ts = self.history[-2]["ts"]
-                        cycle_recharge = sum(
-                            r["amount"] for r in self.recharges if prev_ts <= r["ts"] <= now
-                        )
-                        cycle_consumed = max(0, round(self.history[-2]["balance"] - current_total + cycle_recharge, 2))
-                    else:
-                        cycle_consumed = 0.0
+                if len(self.history) >= 2:
+                    prev_ts = self.history[-2]["ts"]
+                    cycle_recharge = sum(
+                        r["amount"] for r in self.recharges if prev_ts <= r["ts"] <= now
+                    )
+                    cycle_consumed = max(0, round(self.history[-2]["balance"] - current_total + cycle_recharge, 2))
+                else:
+                    cycle_consumed = 0.0
 
-                    total_recharge = sum(r["amount"] for r in self.recharges)
+                total_recharge = sum(r["amount"] for r in self.recharges)
 
-                    return {
-                        "is_available": data.get("is_available", False),
-                        "currency": balance_info.get("currency", "CNY"),
-                        "total_balance": current_total,
-                        "granted_balance": float(balance_info.get("granted_balance", 0)),
-                        "topped_up_balance": float(balance_info.get("topped_up_balance", 0)),
-                        "consumed": cycle_consumed,
-                        "total_recharge": round(total_recharge, 2),
-                        "consumed_30m": self._compute_window(now - 1800, now),
-                        "consumed_3h": self._compute_window(now - 10800, now),
-                        "consumed_today": self._compute_window(today_start, now),
-                        "consumed_yesterday": self._compute_window(yesterday_start, today_start),
-                        "consumed_week": self._compute_window(week_start, now),
-                    }
+                return {
+                    "is_available": data.get("is_available", False),
+                    "currency": balance_info.get("currency", "CNY"),
+                    "total_balance": current_total,
+                    "granted_balance": float(balance_info.get("granted_balance", 0)),
+                    "topped_up_balance": float(balance_info.get("topped_up_balance", 0)),
+                    "consumed": cycle_consumed,
+                    "total_recharge": round(total_recharge, 2),
+                    "consumed_30m": self._compute_window(now - 1800, now),
+                    "consumed_3h": self._compute_window(now - 10800, now),
+                    "consumed_today": self._compute_window(today_start, now),
+                    "consumed_yesterday": self._compute_window(yesterday_start, today_start),
+                    "consumed_week": self._compute_window(week_start, now),
+                }
 
         except aiohttp.ClientError as err:
             raise UpdateFailed(f"连接失败: {err}") from err

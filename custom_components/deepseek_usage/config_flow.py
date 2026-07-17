@@ -11,6 +11,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import DOMAIN, DEFAULT_SCAN_INTERVAL
 
@@ -54,16 +55,16 @@ class DeepSeekConfigFlow(ConfigFlow, domain=DOMAIN):
     async def _test_api_key(self, api_key: str) -> bool:
         """Test if API key is valid."""
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    "https://api.deepseek.com/user/balance",
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                    },
-                    timeout=aiohttp.ClientTimeout(total=10),
-                ) as response:
-                    return response.status == 200
+            session = async_get_clientsession(self.hass)
+            async with session.get(
+                "https://api.deepseek.com/user/balance",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as response:
+                return response.status == 200
         except Exception:
             return False
 

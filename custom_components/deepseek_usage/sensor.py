@@ -123,11 +123,8 @@ class DeepSeekConsumedSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        """Return the consumed amount."""
-        val = self.coordinator.data.get(self._key)
-        if val is None:
-            return "unavailable"
-        return val
+        """Return the consumed amount (None = no data yet, keeps stats clean)."""
+        return self.coordinator.data.get(self._key)
 
     @property
     def available(self) -> bool:
