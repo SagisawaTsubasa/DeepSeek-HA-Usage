@@ -85,6 +85,9 @@ class DeepSeekAvailabilitySensor(CoordinatorEntity, SensorEntity):
     """Representation of DeepSeek availability."""
 
     _attr_has_entity_name = True
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["on", "off"]
+    _attr_icon = "mdi:cloud-check"
 
     def __init__(self, coordinator: DeepSeekCoordinator, device_info: DeviceInfo) -> None:
         """Initialize the sensor."""
@@ -103,9 +106,15 @@ class DeepSeekConsumedSensor(CoordinatorEntity, SensorEntity):
     """Representation of consumed amount over a time window."""
 
     _attr_has_entity_name = True
+    # Period windows (today/yesterday/week/cycle) reset — declare TOTAL and
+    # expose last_reset so long-term statistics interpret them correctly;
+    # rolling windows (30m/3h) keep MEASUREMENT semantics.
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "CNY"
     _attr_device_class = SensorDeviceClass.MONETARY
+
+    # Keys whose value resets at a window boundary.
+    TOTAL_KEYS = frozenset({"consumed", "consumed_today", "consumed_yesterday", "consumed_week"})
 
     def __init__(
         self,
@@ -120,6 +129,8 @@ class DeepSeekConsumedSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = name
         self._attr_unique_id = f"deepseek_{key}_{coordinator.entry.entry_id}"
         self._attr_device_info = device_info
+        if key in self.TOTAL_KEYS:
+            self._attr_state_class = SensorStateClass.TOTAL
 
     @property
     def native_value(self):
@@ -136,6 +147,7 @@ class DeepSeekConsumedSensor(CoordinatorEntity, SensorEntity):
         """Return extra attributes."""
         return {
             "currency": self.coordinator.data.get("currency"),
+            "last_reset": self.coordinator.data.get(f"{self._key}_reset"),
         }
 
 

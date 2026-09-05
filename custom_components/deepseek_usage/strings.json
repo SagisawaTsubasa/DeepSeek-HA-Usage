@@ -7,13 +7,22 @@
         "data": {
           "api_key": "API Key"
         }
+      },
+      "reauth_confirm": {
+        "title": "重新认证 {name}",
+        "description": "API Key 无效或已过期，请重新输入。",
+        "data": {
+          "api_key": "API Key"
+        }
       }
     },
     "error": {
-      "invalid_auth": "API Key 无效或无法连接"
+      "invalid_auth": "API Key 无效",
+      "cannot_connect": "无法连接 DeepSeek 服务器，请检查网络"
     },
     "abort": {
-      "already_configured": "已经配置过了"
+      "already_configured": "该账户已配置",
+      "reauth_successful": "重新认证成功"
     }
   },
   "options": {

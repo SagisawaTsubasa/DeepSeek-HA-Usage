@@ -1,0 +1,20 @@
+record_recharge:
+  name: 记录充值
+  description: 手动录入一笔充值金额，用于修正消耗计算和累计充值传感器。
+  fields:
+    amount:
+      name: 金额
+      description: 充值金额（CNY），必须大于 0。
+      required: true
+      selector:
+        number:
+          min: 0.01
+          max: 1000000
+          step: 0.01
+          mode: box
+    entry_id:
+      name: 配置项 ID
+      description: 配置了多个账户时，指定要记账的配置项；单账户时可省略。
+      required: false
+      selector:
+        text:
