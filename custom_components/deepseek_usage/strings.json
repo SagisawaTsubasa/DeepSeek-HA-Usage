@@ -3,35 +3,76 @@
     "step": {
       "user": {
         "title": "DeepSeek Usage",
-        "description": "输入你的 DeepSeek API Key",
+        "description": "Enter your DeepSeek API key.",
         "data": {
           "api_key": "API Key"
         }
       },
       "reauth_confirm": {
-        "title": "重新认证 {name}",
-        "description": "API Key 无效或已过期，请重新输入。",
+        "title": "Re-authenticate {name}",
+        "description": "The API key is invalid or expired. Please enter a new one.",
         "data": {
           "api_key": "API Key"
         }
       }
     },
     "error": {
-      "invalid_auth": "API Key 无效",
-      "cannot_connect": "无法连接 DeepSeek 服务器，请检查网络"
+      "invalid_auth": "Invalid API key",
+      "cannot_connect": "Cannot connect to the DeepSeek server. Check your network."
     },
     "abort": {
-      "already_configured": "该账户已配置",
-      "reauth_successful": "重新认证成功"
+      "already_configured": "This account is already configured",
+      "reauth_successful": "Re-authentication successful"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "选项",
+        "title": "Options",
         "data": {
-          "scan_interval": "更新间隔（秒）"
+          "scan_interval": "Update interval (seconds)"
         }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "total_balance": {
+        "name": "Total balance"
+      },
+      "granted_balance": {
+        "name": "Granted balance"
+      },
+      "topped_up_balance": {
+        "name": "Topped-up balance"
+      },
+      "is_available": {
+        "name": "Availability",
+        "state": {
+          "on": "Available",
+          "off": "Unavailable"
+        }
+      },
+      "consumed": {
+        "name": "Recent consumption"
+      },
+      "consumed_30m": {
+        "name": "Consumption (30 min)"
+      },
+      "consumed_3h": {
+        "name": "Consumption (3 hours)"
+      },
+      "consumed_today": {
+        "name": "Consumption today"
+      },
+      "consumed_yesterday": {
+        "name": "Consumption yesterday"
+      },
+      "consumed_week": {
+        "name": "Consumption this week"
+      },
+      "total_recharge": {
+        "name": "Total recharge"
       }
     }
   }

@@ -1,7 +1,11 @@
 """Sensor platform for DeepSeek Usage."""
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType
@@ -30,16 +34,16 @@ async def async_setup_entry(
     )
 
     sensors = [
-        DeepSeekBalanceSensor(coordinator, "total_balance", "总余额", device_info),
-        DeepSeekBalanceSensor(coordinator, "granted_balance", "赠送余额", device_info),
-        DeepSeekBalanceSensor(coordinator, "topped_up_balance", "充值余额", device_info),
+        DeepSeekBalanceSensor(coordinator, "total_balance", device_info),
+        DeepSeekBalanceSensor(coordinator, "granted_balance", device_info),
+        DeepSeekBalanceSensor(coordinator, "topped_up_balance", device_info),
         DeepSeekAvailabilitySensor(coordinator, device_info),
-        DeepSeekConsumedSensor(coordinator, "consumed", "最近消耗", device_info),
-        DeepSeekConsumedSensor(coordinator, "consumed_30m", "30分钟消耗", device_info),
-        DeepSeekConsumedSensor(coordinator, "consumed_3h", "3小时消耗", device_info),
-        DeepSeekConsumedSensor(coordinator, "consumed_today", "今日消耗", device_info),
-        DeepSeekConsumedSensor(coordinator, "consumed_yesterday", "昨日消耗", device_info),
-        DeepSeekConsumedSensor(coordinator, "consumed_week", "本周消耗", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed_30m", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed_3h", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed_today", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed_yesterday", device_info),
+        DeepSeekConsumedSensor(coordinator, "consumed_week", device_info),
         DeepSeekRechargeSensor(coordinator, device_info),
     ]
 
@@ -58,13 +62,12 @@ class DeepSeekBalanceSensor(CoordinatorEntity, SensorEntity):
         self,
         coordinator: DeepSeekCoordinator,
         key: str,
-        name: str,
         device_info: DeviceInfo,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._key = key
-        self._attr_name = name
+        self._attr_translation_key = key
         self._attr_unique_id = f"deepseek_{key}_{coordinator.entry.entry_id}"
         self._attr_device_info = device_info
 
@@ -86,13 +89,13 @@ class DeepSeekAvailabilitySensor(CoordinatorEntity, SensorEntity):
 
     _attr_has_entity_name = True
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = ["on", "off"]
     _attr_icon = "mdi:cloud-check"
 
     def __init__(self, coordinator: DeepSeekCoordinator, device_info: DeviceInfo) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self._attr_name = "余额可用"
+        self._attr_translation_key = "is_available"
+        self._attr_options = ["on", "off"]
         self._attr_unique_id = f"deepseek_is_available_{coordinator.entry.entry_id}"
         self._attr_device_info = device_info
 
@@ -120,17 +123,21 @@ class DeepSeekConsumedSensor(CoordinatorEntity, SensorEntity):
         self,
         coordinator: DeepSeekCoordinator,
         key: str,
-        name: str,
         device_info: DeviceInfo,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._key = key
-        self._attr_name = name
+        self._attr_translation_key = key
         self._attr_unique_id = f"deepseek_{key}_{coordinator.entry.entry_id}"
         self._attr_device_info = device_info
         if key in self.TOTAL_KEYS:
             self._attr_state_class = SensorStateClass.TOTAL
+        else:
+            # MONETARY only allows TOTAL/TOTAL_INCREASING state classes; the
+            # rolling windows go down over time so they keep MEASUREMENT and
+            # drop the device class instead (kills the recorder warning).
+            self._attr_device_class = None
 
     @property
     def native_value(self):
@@ -162,7 +169,7 @@ class DeepSeekRechargeSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator: DeepSeekCoordinator, device_info: DeviceInfo) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self._attr_name = "累计充值"
+        self._attr_translation_key = "total_recharge"
         self._attr_unique_id = f"deepseek_total_recharge_{coordinator.entry.entry_id}"
         self._attr_device_info = device_info
 

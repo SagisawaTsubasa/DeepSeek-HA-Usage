@@ -179,3 +179,19 @@ cards:
 ## 许可证
 
 MIT License
+
+## 更新日志 / Changelog
+
+### 1.4.1
+- 修复：30 分钟/3 小时滚动窗口传感器去掉 MONETARY device_class（该 device class 不允许 MEASUREMENT，消除 sensor 组件的 state class 告警），保留 CNY 单位  
+  Fixed: rolling-window sensors (30 min / 3 h) drop the MONETARY device class (incompatible with MEASUREMENT), silencing the sensor component state-class warning
+- 优化：实体名接入 translation_key 体系，英文界面显示英文名、中文界面显示中文名，不再硬编码中文  
+  Improved: entity names now use translation_key — English UI shows English names instead of hardcoded Chinese
+- 优化：strings.json 改为真正的英文文案（此前与中文翻译相同，英文用户看到中文界面）  
+  Improved: strings.json now carries real English strings (previously a copy of the Chinese translations)
+- 清理：ruff 告警清零（import 排序、存储层异常豁免注释、可变类属性）  
+  Chores: ruff warnings cleared (import order, storage-guard noqa, mutable class attribute)
+
+### 1.4.0（2026-09-05 审计修复批次）
+- 修复充值记录永不裁剪、空 balance_infos 崩溃等高危问题；窗口基线、reauth 流程、unique_id 迁移等中低项  
+  September audit fixes: recharge data loss, empty balance_infos crash, window baselines, reauth flow, unique_id migration

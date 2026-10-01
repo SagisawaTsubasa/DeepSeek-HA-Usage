@@ -1,0 +1,79 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "DeepSeek Usage",
+        "description": "Enter your DeepSeek API key.",
+        "data": {
+          "api_key": "API Key"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate {name}",
+        "description": "The API key is invalid or expired. Please enter a new one.",
+        "data": {
+          "api_key": "API Key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid API key",
+      "cannot_connect": "Cannot connect to the DeepSeek server. Check your network."
+    },
+    "abort": {
+      "already_configured": "This account is already configured",
+      "reauth_successful": "Re-authentication successful"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "total_balance": {
+        "name": "Total balance"
+      },
+      "granted_balance": {
+        "name": "Granted balance"
+      },
+      "topped_up_balance": {
+        "name": "Topped-up balance"
+      },
+      "is_available": {
+        "name": "Availability",
+        "state": {
+          "on": "Available",
+          "off": "Unavailable"
+        }
+      },
+      "consumed": {
+        "name": "Recent consumption"
+      },
+      "consumed_30m": {
+        "name": "Consumption (30 min)"
+      },
+      "consumed_3h": {
+        "name": "Consumption (3 hours)"
+      },
+      "consumed_today": {
+        "name": "Consumption today"
+      },
+      "consumed_yesterday": {
+        "name": "Consumption yesterday"
+      },
+      "consumed_week": {
+        "name": "Consumption this week"
+      },
+      "total_recharge": {
+        "name": "Total recharge"
+      }
+    }
+  }
+}

@@ -63,7 +63,7 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
                     "Loaded %d history entries, %d recharges",
                     len(self.history), len(self.recharges),
                 )
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001 — 存储层兜底，任何损坏都不该阻断启动
             _LOGGER.warning("Failed to load history: %s", err)
             self.history = []
             self.recharges = []
@@ -210,7 +210,7 @@ class DeepSeekCoordinator(DataUpdateCoordinator):
                 await self.store.async_save(
                     {"history": self.history, "recharges": self.recharges}
                 )
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 — 保存失败只降级为警告，下轮轮询重试
                 _LOGGER.warning("Failed to save history: %s", err)
 
         # Calendar-day boundaries via dt_util (DST-safe), not fixed 86400s.

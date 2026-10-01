@@ -34,5 +34,46 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "total_balance": {
+        "name": "总余额"
+      },
+      "granted_balance": {
+        "name": "赠送余额"
+      },
+      "topped_up_balance": {
+        "name": "充值余额"
+      },
+      "is_available": {
+        "name": "余额可用",
+        "state": {
+          "on": "可用",
+          "off": "不可用"
+        }
+      },
+      "consumed": {
+        "name": "最近消耗"
+      },
+      "consumed_30m": {
+        "name": "30分钟消耗"
+      },
+      "consumed_3h": {
+        "name": "3小时消耗"
+      },
+      "consumed_today": {
+        "name": "今日消耗"
+      },
+      "consumed_yesterday": {
+        "name": "昨日消耗"
+      },
+      "consumed_week": {
+        "name": "本周消耗"
+      },
+      "total_recharge": {
+        "name": "累计充值"
+      }
+    }
   }
 }
